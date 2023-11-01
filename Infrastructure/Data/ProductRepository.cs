@@ -1,10 +1,11 @@
 using Core.Entities;
 using Core.Interfaces;
+using Core.Specifications;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data
 {
-    public class ProductRepository : IProductRepository
+    public class ProductRepository<T> : IProductRepository<T> where T : BaseEntity
     {
         private readonly StoreContext _context;
         public ProductRepository(StoreContext context)
@@ -12,64 +13,29 @@ namespace Infrastructure.Data
             _context = context;
         }
 
-        public async Task<ProductBrand> GetProductBrandByIdAsync(int id)
+        public async Task<T> GetByIdAsync(int id)
         {
-            return await _context.ProductBrands.FindAsync(id);
+            return await _context.Set<T>().FindAsync(id);
         }
 
-        public async Task<IReadOnlyList<ProductBrand>> GetProductBrandsAsync()
+        public async Task<IReadOnlyList<T>> ListAllAsync()
         {
-            return await _context.ProductBrands.ToListAsync();
+            return await _context.Set<T>().ToListAsync();
         }
 
-        public async Task<Product> GetProductByIdAsync(int id)
+        public async Task<T> GetEntityWithSpecification(ISpecification<T> specification)
         {
-            return await _context.Products
-                .Include(p => p.ProductType)
-                .Include(p => p.ProductBrand)
-                .FirstOrDefaultAsync(p => p.Id == id);
+            return await ApplySpecification(specification).FirstOrDefaultAsync();
         }
 
-        public async Task<IReadOnlyList<Product>> GetProductsAsync()
+        public async Task<IReadOnlyList<T>> ListAsync(ISpecification<T> specification)
         {
-            return await _context.Products
-                .Include(p => p.ProductType)
-                .Include(p => p.ProductBrand)
-                .ToListAsync();
+            return await ApplySpecification(specification).ToListAsync();
         }
 
-        public async Task<ProductType> GetProductTypeByIdAsync(int id)
+        private IQueryable<T> ApplySpecification(ISpecification<T> specification)
         {
-            return await _context.ProductTypes.FindAsync(id);
-        }
-
-        public async Task<IReadOnlyList<ProductType>> GetProductTypesAsync()
-        {
-            return await _context.ProductTypes.ToListAsync();
-        }
-
-        public async Task<Product> AddProductAsync(Product product)
-        {
-            await _context.Products.AddAsync(product);
-            return product;
-        }
-
-        public async Task DeleteProductAsync(int id)
-        {
-            var product = await _context.Products.FindAsync(id);
-            DeleteProductAsync(product);
-
-        }
-
-        public void DeleteProductAsync(Product product)
-        {
-            _context.Products.Remove(product);
-        }
-
-        public Product UpdateProductAsync(Product product)
-        {
-            var result = _context.Products.Update(product);
-            return result.Entity;
+            return SpecificationEvaluator<T>.GetQuery(_context.Set<T>().AsQueryable(), specification);
         }
     }
 }
