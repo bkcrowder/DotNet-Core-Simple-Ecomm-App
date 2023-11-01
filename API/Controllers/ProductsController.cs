@@ -2,6 +2,8 @@ using Core.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Core.Interfaces;
 using Core.Specifications;
+using API.DTO;
+using AutoMapper;
 
 namespace API.Controllers
 {
@@ -13,17 +15,20 @@ namespace API.Controllers
         private readonly IProductRepository<Product> _productRepo;
         private readonly IProductRepository<ProductBrand> _brandRepo;
         private readonly IProductRepository<ProductType> _typeRepo;
+        private readonly IMapper _mapper;
 
         public ProductsController(
             ILogger<ProductsController> logger, 
             IProductRepository<Product> productRepo,
             IProductRepository<ProductBrand> brandRepo,
-            IProductRepository<ProductType> typeRepo
+            IProductRepository<ProductType> typeRepo,
+            IMapper mapper
         )
         {
             _productRepo = productRepo;
             _brandRepo = brandRepo;
             _typeRepo = typeRepo;
+            _mapper = mapper;
             _logger = logger;
         }
 
@@ -33,15 +38,17 @@ namespace API.Controllers
             var spec = new ProductsWithTypesAndBrandsSpecification();
 
             var products = await _productRepo.ListAsync(spec);
-            return Ok(products);
+            return Ok(_mapper
+                .Map<IReadOnlyList<Product>, IReadOnlyList<ProductToReturnDTO>>(products));
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Product>> GetProduct(int id) 
+        public async Task<ActionResult<ProductToReturnDTO>> GetProduct(int id) 
         {
             var spec = new ProductsWithTypesAndBrandsSpecification(id);
             var product = await _productRepo.GetEntityWithSpecification(spec);
-            return Ok(product);
+
+            return Ok(_mapper.Map<Product, ProductToReturnDTO>(product));
         }
 
         [HttpGet("brands")]
@@ -59,8 +66,7 @@ namespace API.Controllers
         [HttpPost]
         public async Task<ActionResult<Product>> CreateProduct(Product product)
         {
-            //return await _productRepo.AddProductAsync(product);
-            return Ok();
+            throw new NotImplementedException();
         }
     }
 }
