@@ -1,0 +1,4 @@
+**/bin
+**/obj
+*.vscode/
+API/appsettings*.json
