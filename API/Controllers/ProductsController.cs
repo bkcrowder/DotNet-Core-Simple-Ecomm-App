@@ -1,7 +1,6 @@
-using Infrastructure.Data;
 using Core.Entities;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Core.Interfaces;
 
 namespace API.Controllers
 {
@@ -10,45 +9,42 @@ namespace API.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly ILogger<ProductsController> _logger;
-        private readonly StoreContext _context;
+        private readonly IProductRepository _productRepository;
 
-        public ProductsController(ILogger<ProductsController> logger, StoreContext context)
+        public ProductsController(ILogger<ProductsController> logger, IProductRepository productRepository)
         {
+            _productRepository = productRepository;
             _logger = logger;
-            _context = context;
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<Product>>> GetProducts() 
+        public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts() 
         {
-            var products = await _context.Products.ToListAsync();
-            return Ok(products);
+            return Ok(await _productRepository.GetProductsAsync());
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id) 
         {
-            return Ok(await _context.Products.FindAsync(id));
+            return Ok(await _productRepository.GetProductByIdAsync(id));
+        }
+
+        [HttpGet("brands")]
+        public async Task<ActionResult<IReadOnlyList<ProductBrand>>> GetProductBrands()
+        {
+            return Ok(await _productRepository.GetProductBrandsAsync());
+        }
+
+        [HttpGet("types")]
+        public async Task<ActionResult<IReadOnlyList<ProductType>>> GetProductTypes()
+        {
+            return Ok(await _productRepository.GetProductTypesAsync());
         }
 
         [HttpPost]
         public async Task<ActionResult<Product>> CreateProduct(Product product)
         {
-            await _context.Products.AddAsync(product);
-            return product;
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteProduct(int id)
-        {
-            var product = await _context.Products.FindAsync(id);
-            if (product == null)
-            {
-                return NotFound();
-            }
-
-            _context.Products.Remove(product);
-            return NoContent();
+            return await _productRepository.AddProductAsync(product);
         }
     }
 }
