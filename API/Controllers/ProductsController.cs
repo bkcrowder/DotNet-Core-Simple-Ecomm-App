@@ -33,7 +33,7 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts() 
+        public async Task<ActionResult<IReadOnlyList<ProductToReturnDTO>>> GetProducts() 
         {
             var spec = new ProductsWithTypesAndBrandsSpecification();
 
@@ -61,12 +61,6 @@ namespace API.Controllers
         public async Task<ActionResult<IReadOnlyList<ProductType>>> GetProductTypes()
         {
             return Ok(await _typeRepo.ListAllAsync());
-        }
-
-        [HttpPost]
-        public async Task<ActionResult<Product>> CreateProduct(Product product)
-        {
-            throw new NotImplementedException();
         }
     }
 }
